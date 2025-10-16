@@ -13,7 +13,7 @@
     "tags": ["github", "cicd", "actions", "deployment", "automation"]
   },
 
-  "fields": [
+  "scaffoldConfigTemplate": [
     {
       "key": "githubOrg",
       "label": "GitHub Organization/User",
