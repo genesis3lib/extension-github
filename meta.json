@@ -5,7 +5,7 @@
     "id": "extension-github",
     "name": "GitHub Actions CI/CD",
     "kind": "extension",
-    "layers": ["ops"],
+    "layers": ["cicd"],
     "type": "github",
     "description": "Complete GitHub Actions CI/CD workflows for infrastructure setup, deployment, and testing",
     "version": "1.0.0",
@@ -31,28 +31,6 @@
       "required": true,
       "description": "GitHub repository name",
       "category": "cicd"
-    }
-  ],
-
-  "files": [
-    ".github/workflows/Appinfra-010-init.yml.mustache",
-    ".github/workflows/Appinfra-020-bootstrap.yml.mustache",
-    ".github/workflows/Appinfra-030-apply.yml.mustache",
-    ".github/workflows/Code-200-client.yml.mustache",
-    ".github/workflows/Code-300-server.yml.mustache",
-    ".github/workflows/Code-320-server-ec2-pwd.yml.mustache",
-    ".github/workflows/Destruct-400-nuke.yml.mustache",
-    ".github/workflows/Test-800-Aws.yml.mustache"
-  ],
-
-  "runtimeConfigTemplate": [
-    {
-      "key": "GITHUB_REPOSITORY",
-      "description": "GitHub repository in format 'org/repo'",
-      "example": "{{githubOrg}}/{{githubRepo}}",
-      "required": true,
-      "secret": false,
-      "targets": []
     }
   ],
 
