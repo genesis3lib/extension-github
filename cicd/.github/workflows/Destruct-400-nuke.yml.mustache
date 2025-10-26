@@ -27,7 +27,7 @@ jobs:
           # Set environment variables
           echo "BRANCH={{{githubVarsOpen}}} github.ref_name  {{{githubVarsClose}}}" >> $GITHUB_ENV
           if [[ "{{{githubVarsOpen}}} github.ref_name  {{{githubVarsClose}}}" = "main" || "{{{githubVarsOpen}}} github.ref_name  {{{githubVarsClose}}}" = "production" ]]; then
-            echo "ENVIRONMENT=production" >> $GITHUB_ENV
+            echo "ENVIRONMENT=prod" >> $GITHUB_ENV
           else
             BRANCH_ENV=$(echo "{{{githubVarsOpen}}} github.ref_name  {{{githubVarsClose}}}" | sed "s///-/g")
             echo "ENVIRONMENT=$BRANCH_ENV" >> $GITHUB_ENV
@@ -50,7 +50,7 @@ jobs:
       - name: "Phase 1: Pre-Destroy Comprehensive Cleanup"
         continue-on-error: true
         run: |
-          cd {{id}}/terraform
+          cd {{opsModule.moduleId}}/terraform
           echo "🧹 Phase 1: Comprehensive pre-destroy cleanup - preparing all resources..."
           
           # Enhanced cleanup function with dependency handling
@@ -471,7 +471,7 @@ jobs:
       - name: "Phase 2: Controlled Terraform Destroy"
         continue-on-error: true
         run: |
-          cd {{id}}/terraform
+          cd {{opsModule.moduleId}}/terraform
           echo "🔧 Phase 2: Initializing Terraform for controlled destroy..."
           
           # Disable exit on error for this specific command
@@ -770,9 +770,9 @@ jobs:
           echo "✅ Enhanced manual cleanup completed!"
           
           # Also run the original cleanup script for additional coverage
-          if [ -f "{{id}}/helper/cleanup-manual.sh" ]; then
+          if [ -f "{{opsModule.moduleId}}/helper/cleanup-manual.sh" ]; then
             echo "📋 Running additional cleanup script for comprehensive coverage..."
-            cd {{id}}/helper
+            cd {{opsModule.moduleId}}/helper
             chmod +x cleanup-manual.sh
             # Ensure the cleanup script uses admin credentials
             AWS_ACCESS_KEY_ID="{{{githubVarsOpen}}} vars.AWS_ADMIN_ID {{{githubVarsClose}}}" AWS_SECRET_ACCESS_KEY="{{{githubVarsOpen}}} secrets.AWS_ADMIN_SECRET  {{{githubVarsClose}}}" AWS_DEFAULT_REGION="{{{githubVarsOpen}}} env.AWS_REGION  {{{githubVarsClose}}}" ./cleanup-manual.sh {{{githubVarsOpen}}} env.ENVIRONMENT  {{{githubVarsClose}}} 2>/dev/null || true

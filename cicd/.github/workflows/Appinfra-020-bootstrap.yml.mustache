@@ -27,7 +27,7 @@ jobs:
           # Set environment variables
           echo "BRANCH={{{githubVarsOpen}}} github.ref_name  {{{githubVarsClose}}}" >> $GITHUB_ENV
           if [[ "{{{githubVarsOpen}}} github.ref_name  {{{githubVarsClose}}}" = "main" || "{{{githubVarsOpen}}} github.ref_name  {{{githubVarsClose}}}" = "production" ]]; then
-            echo "ENVIRONMENT=production" >> $GITHUB_ENV
+            echo "ENVIRONMENT=prod" >> $GITHUB_ENV
           else 
             BRANCH_ENV=$(echo "{{{githubVarsOpen}}} github.ref_name  {{{githubVarsClose}}}" | sed "s///-/g")
             echo "ENVIRONMENT=$BRANCH_ENV" >> $GITHUB_ENV
@@ -49,12 +49,12 @@ jobs:
 
       - name: Terraform Init (Bootstrap)
         run: |
-          cd {{id}}/terraform/bootstrap
+          cd {{opsModule.moduleId}}/terraform/bootstrap
           terraform init -input=false
 
       - name: Terraform Validate (Bootstrap)
         run: |
-          cd {{id}}/terraform/bootstrap
+          cd {{opsModule.moduleId}}/terraform/bootstrap
           terraform validate -no-color
 
       - name: Clear DynamoDB Locks
@@ -92,12 +92,12 @@ jobs:
 
       - name: Terraform Plan (Bootstrap)
         run: |
-          cd {{id}}/terraform/bootstrap
+          cd {{opsModule.moduleId}}/terraform/bootstrap
           terraform plan -var="environment={{{githubVarsOpen}}} env.ENVIRONMENT  {{{githubVarsClose}}}" -no-color -input=false
 
       - name: Terraform Apply (Bootstrap)
         run: |
-          cd {{id}}/terraform/bootstrap
+          cd {{opsModule.moduleId}}/terraform/bootstrap
           echo "🚀 Applying bootstrap infrastructure..."
           
           # Try apply, but handle "already exists" errors gracefully
@@ -630,7 +630,7 @@ jobs:
 
       - name: Output Bootstrap Results
         run: |
-          cd {{id}}/terraform/bootstrap
+          cd {{opsModule.moduleId}}/terraform/bootstrap
           echo "## Terraform Bootstrap Completed ✅" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**State Bucket:** $(terraform output -raw state_bucket_name)" >> $GITHUB_STEP_SUMMARY

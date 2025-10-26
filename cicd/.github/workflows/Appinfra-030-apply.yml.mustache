@@ -29,7 +29,7 @@ jobs:
           # Set environment variables
           echo "BRANCH={{{githubVarsOpen}}} github.ref_name  {{{githubVarsClose}}}" >> $GITHUB_ENV
           if [[ "{{{githubVarsOpen}}} github.ref_name  {{{githubVarsClose}}}" = "main" || "{{{githubVarsOpen}}} github.ref_name  {{{githubVarsClose}}}" = "production" ]]; then
-            echo "ENVIRONMENT=production" >> $GITHUB_ENV
+            echo "ENVIRONMENT=prod" >> $GITHUB_ENV
           else
             BRANCH_ENV=$(echo "{{{githubVarsOpen}}} github.ref_name  {{{githubVarsClose}}}" | sed "s///-/g")
             echo "ENVIRONMENT=$BRANCH_ENV" >> $GITHUB_ENV
@@ -59,7 +59,7 @@ jobs:
       - name: Terraform Init
         id: init
         run: |
-          cd {{id}}/terraform
+          cd {{opsModule.moduleId}}/terraform
           echo "🔧 Initializing Terraform..."
           
           # Disable exit on error for this specific command
@@ -130,7 +130,7 @@ jobs:
       - name: Terraform Validate
         id: validate
         run: |
-          cd {{id}}/terraform
+          cd {{opsModule.moduleId}}/terraform
           terraform validate -no-color
 
       - name: Check and Generate SSH Keys
@@ -179,7 +179,7 @@ jobs:
       - name: Terraform Plan
         id: plan
         run: |
-          cd {{id}}/terraform
+          cd {{opsModule.moduleId}}/terraform
           echo "🗓️ Running Terraform plan..."
           
           # Build plan command
@@ -209,7 +209,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: tfplan-{{{githubVarsOpen}}} env.ENVIRONMENT  {{{githubVarsClose}}}
-          path: {{id}}/terraform/tfplan-{{{githubVarsOpen}}} env.ENVIRONMENT  {{{githubVarsClose}}}
+          path: {{opsModule.moduleId}}/terraform/tfplan-{{{githubVarsOpen}}} env.ENVIRONMENT  {{{githubVarsClose}}}
           retention-days: 1
 
       - name: Plan Status
@@ -232,7 +232,7 @@ jobs:
           # Set environment variables
           echo "BRANCH={{{githubVarsOpen}}} github.ref_name  {{{githubVarsClose}}}" >> $GITHUB_ENV
           if [[ "{{{githubVarsOpen}}} github.ref_name  {{{githubVarsClose}}}" = "main" || "{{{githubVarsOpen}}} github.ref_name  {{{githubVarsClose}}}" = "production" ]]; then
-            echo "ENVIRONMENT=production" >> $GITHUB_ENV
+            echo "ENVIRONMENT=prod" >> $GITHUB_ENV
           else
             BRANCH_ENV=$(echo "{{{githubVarsOpen}}} github.ref_name  {{{githubVarsClose}}}" | sed "s///-/g")
             echo "ENVIRONMENT=$BRANCH_ENV" >> $GITHUB_ENV
@@ -256,7 +256,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: tfplan-{{{githubVarsOpen}}} env.ENVIRONMENT  {{{githubVarsClose}}}
-          path: {{id}}/terraform/
+          path: {{opsModule.moduleId}}/terraform/
 
       - name: Check and Generate SSH Keys
         run: |
@@ -337,7 +337,7 @@ jobs:
             
             # Update tfvars with certificate ARN
             echo "📝 Updating tfvars with certificate ARN..."
-            sed -i "s|certificate_arn = \"\"| certificate_arn = \"$CERT_ARN\"|g" "{{id}}/terraform/environments/{{{githubVarsOpen}}} env.ENVIRONMENT  {{{githubVarsClose}}}.tfvars"
+            sed -i "s|certificate_arn = \"\"| certificate_arn = \"$CERT_ARN\"|g" "{{opsModule.moduleId}}/terraform/environments/{{{githubVarsOpen}}} env.ENVIRONMENT  {{{githubVarsClose}}}.tfvars"
             
             echo "✅ Certificate ARN set in tfvars"
           else
@@ -346,7 +346,7 @@ jobs:
 
       - name: Terraform Init
         run: |
-          cd {{id}}/terraform
+          cd {{opsModule.moduleId}}/terraform
           echo "🔧 Initializing Terraform..."
           
           # Disable exit on error for this specific command
@@ -414,7 +414,7 @@ jobs:
       - name: Terraform Apply
         id: apply
         run: |
-          cd {{id}}/terraform
+          cd {{opsModule.moduleId}}/terraform
           echo "🚀 Running Terraform Apply..."
           
           # Apply terraform with error handling
@@ -445,7 +445,7 @@ jobs:
         id: outputs
         if: steps.apply.outputs.apply_success == 'true'
         run: |
-          cd {{id}}/terraform
+          cd {{opsModule.moduleId}}/terraform
           echo "📋 Extracting terraform outputs..."
           
           # Safely extract outputs with error handling
@@ -473,7 +473,7 @@ jobs:
       - name: Display SSL Certificate Validation Info
         continue-on-error: true
         run: |
-          cd {{id}}/terraform
+          cd {{opsModule.moduleId}}/terraform
           echo "🌐 UI Domain Configuration:"
           echo "  UI Domain: $(terraform output -raw ui_domain)"
           echo "  CloudFront Domain: $(terraform output -raw cloudfront_domain_name)"
@@ -515,8 +515,8 @@ jobs:
             exit 0
           fi
           
-          echo "📁 Copying {{id}}/ec2-setup/ directory to s3://${OPS_BUCKET}/ec2-setup/"
-          aws s3 cp {{id}}/ec2-setup/ "s3://${OPS_BUCKET}/ec2-setup/" --recursive --region {{{githubVarsOpen}}} env.AWS_REGION  {{{githubVarsClose}}}
+          echo "📁 Copying {{opsModule.moduleId}}/ec2-setup/ directory to s3://${OPS_BUCKET}/ec2-setup/"
+          aws s3 cp {{opsModule.moduleId}}/ec2-setup/ "s3://${OPS_BUCKET}/ec2-setup/" --recursive --region {{{githubVarsOpen}}} env.AWS_REGION  {{{githubVarsClose}}}
           
           echo "✅ EC2 setup scripts copied to S3 successfully"
           echo "🔍 Verifying uploaded files:"
