@@ -25,7 +25,7 @@
       "label": "GitHub Organization/User",
       "type": "select",
       "options": "runtime",
-      "default": "",
+      "default": "runtime",
       "required": true,
       "description": "GitHub organization or username for repository",
       "category": "cicd"
@@ -34,7 +34,7 @@
       "key": "githubRepo",
       "label": "GitHub Repository Name",
       "type": "text",
-      "default": "",
+      "default": "runtime",
       "required": true,
       "description": "GitHub repository name",
       "category": "cicd"
