@@ -1,23 +1,30 @@
 {
   "version": "3.0.0",
-
   "metadata": {
     "id": "extension-github",
     "name": "GitHub Actions CI/CD",
     "kind": "extension",
-    "layers": ["cicd"],
+    "layers": [
+      "cicd"
+    ],
     "type": "github",
     "description": "Complete GitHub Actions CI/CD workflows for infrastructure setup, deployment, and testing",
     "version": "1.0.0",
     "author": "Genesis Team",
-    "tags": ["github", "cicd", "actions", "deployment", "automation"]
+    "tags": [
+      "github",
+      "cicd",
+      "actions",
+      "deployment",
+      "automation"
+    ]
   },
-
   "scaffoldConfigTemplate": [
     {
       "key": "githubOrg",
       "label": "GitHub Organization/User",
-      "type": "text",
+      "type": "select",
+      "options": "runtime",
       "default": "",
       "required": true,
       "description": "GitHub organization or username for repository",
@@ -33,7 +40,6 @@
       "category": "cicd"
     }
   ],
-
   "generation": {
     "files": {
       "remove": []
