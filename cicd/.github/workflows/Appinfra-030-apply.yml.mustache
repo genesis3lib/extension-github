@@ -255,7 +255,7 @@ jobs:
       - name: Download Terraform Plan
         uses: actions/download-artifact@v4
         with:
-          name: tfplan-{{{githubVarsOpen}}} env.ENVIRONMENT  {{{githubVarsClose}}}
+          name: tfplan-{{{githubVarsOpen}}} needs.plan.outputs.environment  {{{githubVarsClose}}}
           path: {{opsModule.moduleId}}/terraform/
 
       - name: Check and Generate SSH Keys
