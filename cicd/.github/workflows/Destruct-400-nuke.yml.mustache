@@ -29,7 +29,7 @@ jobs:
           if [[ "{{{githubVarsOpen}}} github.ref_name  {{{githubVarsClose}}}" = "main" || "{{{githubVarsOpen}}} github.ref_name  {{{githubVarsClose}}}" = "production" ]]; then
             echo "ENVIRONMENT=prod" >> $GITHUB_ENV
           else
-            BRANCH_ENV=$(echo "{{{githubVarsOpen}}} github.ref_name  {{{githubVarsClose}}}" | sed "s///-/g")
+            BRANCH_ENV=$(echo "{{{githubVarsOpen}}} github.ref_name  {{{githubVarsClose}}}" | sed "s/\\//-/g")
             echo "ENVIRONMENT=$BRANCH_ENV" >> $GITHUB_ENV
           fi
           
