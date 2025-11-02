@@ -129,8 +129,8 @@ jobs:
 
       - name: Deploy - Add build info
         run: |
-          mkdir -p {{backendModule.id}}/src/main/resources
-          echo -e "gh.build={{{githubVarsOpen}}} github.run_number  {{{githubVarsClose}}}\\ngh.attempt={{{githubVarsOpen}}} github.run_attempt  {{{githubVarsClose}}}\\ngh.action={{{githubVarsOpen}}} github.action  {{{githubVarsClose}}}\\ngh.modifiedDate={{{githubVarsOpen}}} github.event.repository.updated_at  {{{githubVarsClose}}}\\ngh.sha=$( git rev-parse --short HEAD )" > {{backendModule.id}}/src/main/resources/version.properties
+          mkdir -p {{backendModule.moduleId}}/src/main/resources
+          echo -e "gh.build={{{githubVarsOpen}}} github.run_number  {{{githubVarsClose}}}\\ngh.attempt={{{githubVarsOpen}}} github.run_attempt  {{{githubVarsClose}}}\\ngh.action={{{githubVarsOpen}}} github.action  {{{githubVarsClose}}}\\ngh.modifiedDate={{{githubVarsOpen}}} github.event.repository.updated_at  {{{githubVarsClose}}}\\ngh.sha=$( git rev-parse --short HEAD )" > {{backendModule.moduleId}}/src/main/resources/version.properties
 
       - name: Deploy - Set up JDK 21
         uses: actions/setup-java@v4
@@ -145,7 +145,7 @@ jobs:
     
       - name: Deploy - Build Application (with tests)
         run: |
-          cd {{backendModule.id}}
+          cd {{backendModule.moduleId}}
           gradle -PversionArg=1.0.{{{githubVarsOpen}}} github.run_number  {{{githubVarsClose}}}.{{{githubVarsOpen}}} github.run_attempt  {{{githubVarsClose}}} bootJar -x test
 
       - name: Deploy - Sync JAR to S3
@@ -155,20 +155,20 @@ jobs:
           echo "JAR: ${JAR_NAME}"
           
           # Verify JAR file exists
-          if [ ! -f "{{backendModule.id}}/build/libs/${JAR_NAME}" ]; then
-            echo "❌ JAR file not found: {{backendModule.id}}/build/libs/${JAR_NAME}"
-            echo "📁 Available files in {{backendModule.id}}/build/libs/:"
-            ls -la {{backendModule.id}}/build/libs/ || echo "Directory not found"
+          if [ ! -f "{{backendModule.moduleId}}/build/libs/${JAR_NAME}" ]; then
+            echo "❌ JAR file not found: {{backendModule.moduleId}}/build/libs/${JAR_NAME}"
+            echo "📁 Available files in {{backendModule.moduleId}}/build/libs/:"
+            ls -la {{backendModule.moduleId}}/build/libs/ || echo "Directory not found"
             exit 1
           fi
           
           # Show JAR file info
           echo "📋 JAR file details:"
-          ls -lh "{{backendModule.id}}/build/libs/${JAR_NAME}"
+          ls -lh "{{backendModule.moduleId}}/build/libs/${JAR_NAME}"
           
           # Create a staging directory for sync
           mkdir -p ./staging/jars
-          cp {{backendModule.id}}/build/libs/${JAR_NAME} "./staging/jars/"
+          cp {{backendModule.moduleId}}/build/libs/${JAR_NAME} "./staging/jars/"
           
           # Sync the staging/jars directory to S3
           echo "🚀 Syncing JAR to S3..."

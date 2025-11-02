@@ -102,7 +102,7 @@ jobs:
 
       - name: Build
         run: |
-          cd {{frontendModule.id}}
+          cd {{frontendModule.moduleId}}
           ls -lart
           pwd
           node -v
@@ -120,7 +120,7 @@ jobs:
 
       - name: Check and commit package-lock.json changes
         run: |
-          cd {{frontendModule.id}}
+          cd {{frontendModule.moduleId}}
 
           # Check if package-lock.json exists and has changes
           if [ -f "package-lock.json" ]; then
@@ -149,7 +149,7 @@ jobs:
       - name: Deploy - Sync S3 Bucket
         run: |
           echo "Deploying to ${AWS_S3_TARGET} [${CLOUDFRONT_TARGET}]"
-          aws s3 sync {{frontendModule.id}}/dist "s3://${AWS_S3_TARGET}" --region {{{githubVarsOpen}}} env.AWS_REGION  {{{githubVarsClose}}} --delete
+          aws s3 sync {{frontendModule.moduleId}}/dist "s3://${AWS_S3_TARGET}" --region {{{githubVarsOpen}}} env.AWS_REGION  {{{githubVarsClose}}} --delete
 
       - name: Deploy - Invalidate CloudFront cache
         run: |
