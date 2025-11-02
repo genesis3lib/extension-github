@@ -95,28 +95,7 @@ jobs:
         env:
           AWS_DEFAULT_REGION: {{{githubVarsOpen}}} env.AWS_REGION  {{{githubVarsClose}}}
 
-      - name: Check for package-lock.json
-        id: check-lockfile
-        run: |
-          cd {{frontendModule.id}}
-          if [ -f "package-lock.json" ]; then
-            echo "lockfile-exists=true" >> $GITHUB_OUTPUT
-            echo "✅ package-lock.json found - caching will be enabled"
-          else
-            echo "lockfile-exists=false" >> $GITHUB_OUTPUT
-            echo "ℹ️ package-lock.json not found - skipping cache"
-          fi
-
-      - name: Setup Node.js (with cache)
-        if: steps.check-lockfile.outputs.lockfile-exists == 'true'
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: 'npm'
-          cache-dependency-path: '{{frontendModule.id}}/package-lock.json'
-
-      - name: Setup Node.js (without cache)
-        if: steps.check-lockfile.outputs.lockfile-exists == 'false'
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -139,56 +118,32 @@ jobs:
             CI=false npm run build
           fi
 
-      - name: Check and commit generated package-lock.json
+      - name: Check and commit package-lock.json changes
         run: |
           cd {{frontendModule.id}}
-          
-          # Check if package-lock.json was generated during build
-          if [ -f "package-lock.json" ] && [ "${{{githubVarsOpen}}}steps.check-lockfile.outputs.lockfile-exists{{{githubVarsClose}}}" = "false" ]; then
-            echo "📦 package-lock.json was generated during build process"
-            echo "🔄 Committing package-lock.json to repository..."
-            
-            
-            # Add and commit the generated package-lock.json
-            git add package-lock.json
-            if git diff --cached --quiet; then
-              echo "ℹ️ No changes to commit"
+
+          # Check if package-lock.json exists and has changes
+          if [ -f "package-lock.json" ]; then
+            # Check if there are any changes to package-lock.json
+            if git diff --quiet package-lock.json && git diff --cached --quiet package-lock.json; then
+              echo "✅ No changes to package-lock.json"
             else
-              echo "🔄 package-lock.json was generated during build, committing changes..."
+              echo "🔄 package-lock.json was modified during build, committing changes..."
 
               # Configure git for the action
               git config --local user.email "action@github.com"
               git config --local user.name "GitHub Action"
 
-              git commit -m "🤖 generated package-lock.json from build process"
-              
+              # Add and commit the package-lock.json
+              git add package-lock.json
+              git commit -m "🤖 updated package-lock.json from build process"
+
               # Push the commit back to the repository
               git push
               echo "✅ package-lock.json committed and pushed successfully"
             fi
-          elif [ -f "package-lock.json" ] && [ "${{{githubVarsOpen}}}steps.check-lockfile.outputs.lockfile-exists{{{githubVarsClose}}}" = "true" ]; then
-            echo "ℹ️ package-lock.json already existed and may have been updated during build"
-            
-            # Check if there are changes to the existing package-lock.json
-            if git diff --quiet package-lock.json; then
-              echo "✅ No changes to existing package-lock.json"
-            else
-              echo "🔄 package-lock.json was modified during build, committing changes..."
-              
-              # Configure git for the action
-              git config --local user.email "action@github.com"
-              git config --local user.name "GitHub Action"
-              
-              # Add and commit the updated package-lock.json
-              git add package-lock.json
-              git commit -m "🤖 updated package-lock.json from build process"
-              
-              # Push the commit back to the repository
-              git push
-              echo "✅ Updated package-lock.json committed and pushed successfully"
-            fi
           else
-            echo "ℹ️ No package-lock.json found after build - nothing to commit"
+            echo "ℹ️ No package-lock.json found after build"
           fi
 
       - name: Deploy - Sync S3 Bucket
