@@ -25,9 +25,9 @@ jobs:
           
           # Set environment variables
           echo "BRANCH={{{githubVarsOpen}}} github.ref_name  {{{githubVarsClose}}}" >> $GITHUB_ENV
-          if [[ "{{{githubVarsOpen}}} github.ref_name  {{{githubVarsClose}}}" = "main" || "{{{githubVarsOpen}}} github.ref_name  {{{githubVarsClose}}}" = "production" ]]; then
+          if [[ "{{{githubVarsOpen}}} github.ref_name  {{{githubVarsClose}}}" = "main" || "{{{githubVarsOpen}}} github.ref_name  {{{githubVarsClose}}}" = "production" || "{{{githubVarsOpen}}} github.ref_name  {{{githubVarsClose}}}" = "prod" ]]; then
             echo "ENVIRONMENT=prod" >> $GITHUB_ENV
-          else 
+          else
             BRANCH_ENV=$(echo "{{{githubVarsOpen}}} github.ref_name  {{{githubVarsClose}}}" | sed "s/\\//-/g")
             echo "ENVIRONMENT=$BRANCH_ENV" >> $GITHUB_ENV
           fi
@@ -164,7 +164,7 @@ jobs:
           echo "🔐 Creating SSL certificate for UI domain..."
           
           # Extract configuration with environment-specific prefix
-          if [ "${ENVIRONMENT}" = "production" ]; then
+          if [ "${ENVIRONMENT}" = "prod" ] || [ "${ENVIRONMENT}" = "production" ]; then
             UI_DOMAIN="{{projectName}}-ui.{{sld}}.{{tld}}"
           else
             UI_DOMAIN="{{projectName}}-${ENVIRONMENT}-ui.{{sld}}.{{tld}}"
