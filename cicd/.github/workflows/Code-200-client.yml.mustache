@@ -109,14 +109,8 @@ jobs:
           npm -v
           npm install
           npx update-browserslist-db@latest
-          # Use environment-specific build script
-          if [ "{{{githubVarsOpen}}} env.ENVIRONMENT  {{{githubVarsClose}}}" = "prod" ] || [ "{{{githubVarsOpen}}} env.ENVIRONMENT  {{{githubVarsClose}}}" = "production" ]; then
-            echo "🔨 Running production build..."
-            CI=false npm run build:production
-          else
-            echo "🔨 Running development build..."
-            CI=false npm run build
-          fi
+          echo "🔨 Running build for {{{githubVarsOpen}}} env.ENVIRONMENT  {{{githubVarsClose}}} environment..."
+          CI=false npm run build
 
       - name: Check and commit package-lock.json changes
         run: |
