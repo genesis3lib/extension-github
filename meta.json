@@ -44,6 +44,8 @@
     "files": {
       "remove": []
     },
-    "layers": {}
+    "layers": {
+      "cicd": {}
+    }
   }
 }
