@@ -40,6 +40,7 @@
       "category": "cicd"
     }
   ],
+  "dependencies": {},
   "generation": {
     "files": {
       "remove": []
@@ -47,5 +48,6 @@
     "layers": {
       "cicd": {}
     }
-  }
+  },
+  "gitignore": []
 }
