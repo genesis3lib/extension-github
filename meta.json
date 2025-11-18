@@ -1,9 +1,9 @@
 {
   "version": "3.0.0",
   "metadata": {
-    "id": "extension-github",
+    "id": "vcs-github",
     "name": "GitHub Actions CI/CD",
-    "kind": "extension",
+    "kind": "vcs",
     "layers": [
       "cicd"
     ],
@@ -17,8 +17,7 @@
       "actions",
       "deployment",
       "automation"
-    ],
-    "providers": ["aws"]
+    ]
   },
   "scaffoldConfigTemplate": [
     {
