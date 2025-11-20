@@ -180,6 +180,15 @@ jobs:
 
       - name: Terraform Plan
         id: plan
+        env:
+{{#hasRuntimeSecrets}}
+          # Runtime secrets from GitHub Actions secrets (environment-specific)
+          # These are passed to Terraform as TF_VAR_runtime_secret_* variables
+          # Secret naming: <KEY>_<ENVIRONMENT> (e.g., AUTH0_CLIENT_SECRET_PROD, JWT_SECRET_KEY_DEV)
+{{#uniqueRuntimeSecretKeys}}
+          TF_VAR_runtime_secret_{{key}}: {{{githubVarsOpen}}} secrets.{{key}}_{{{githubVarsOpen}}} env.ENVIRONMENT {{{githubVarsClose}}} {{{githubVarsClose}}}
+{{/uniqueRuntimeSecretKeys}}
+{{/hasRuntimeSecrets}}
         run: |
           cd {{opsModule.moduleId}}/terraform
           echo "🗓️ Running Terraform plan..."
@@ -417,10 +426,19 @@ jobs:
 
       - name: Terraform Apply
         id: apply
+        env:
+{{#hasRuntimeSecrets}}
+          # Runtime secrets from GitHub Actions secrets (environment-specific)
+          # These are passed to Terraform as TF_VAR_runtime_secret_* variables
+          # Secret naming: <KEY>_<ENVIRONMENT> (e.g., AUTH0_CLIENT_SECRET_PROD, JWT_SECRET_KEY_DEV)
+{{#uniqueRuntimeSecretKeys}}
+          TF_VAR_runtime_secret_{{key}}: {{{githubVarsOpen}}} secrets.{{key}}_{{{githubVarsOpen}}} env.ENVIRONMENT {{{githubVarsClose}}} {{{githubVarsClose}}}
+{{/uniqueRuntimeSecretKeys}}
+{{/hasRuntimeSecrets}}
         run: |
           cd {{opsModule.moduleId}}/terraform
           echo "🚀 Running Terraform Apply..."
-          
+
           # Apply terraform with error handling
           set +e
           APPLY_OUTPUT=$(terraform apply -input=false -auto-approve tfplan-{{{githubVarsOpen}}} env.ENVIRONMENT  {{{githubVarsClose}}} 2>&1)
