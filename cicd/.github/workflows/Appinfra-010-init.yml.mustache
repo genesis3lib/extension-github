@@ -286,9 +286,10 @@ jobs:
       - name: Check and Generate SSH Keys
         run: |
           echo "🔑 Checking SSH keys in S3 terraform-state bucket..."
-          
-          # Determine the terraform state bucket name
-          STATE_BUCKET="{{projectName}}-terraform-state"
+
+          # Determine the terraform state bucket name (includes AWS account ID for global uniqueness)
+          AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          STATE_BUCKET="{{projectName}}-tfstate-${AWS_ACCOUNT_ID}"
           
           echo "Checking for SSH keys in bucket: $STATE_BUCKET"
           

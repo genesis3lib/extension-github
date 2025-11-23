@@ -61,10 +61,15 @@ jobs:
         run: |
           cd {{opsModule.moduleId}}/terraform
           echo "🔧 Initializing Terraform..."
-          
+
+          # Get AWS account ID for state bucket name
+          AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          STATE_BUCKET="{{projectName}}-tfstate-${AWS_ACCOUNT_ID}"
+          echo "Using state bucket: $STATE_BUCKET"
+
           # Disable exit on error for this specific command
           set +e
-          INIT_OUTPUT=$(terraform init -backend-config=backend-${ENVIRONMENT}.hcl -input=false 2>&1)
+          INIT_OUTPUT=$(terraform init -backend-config=backend-${ENVIRONMENT}.hcl -backend-config="bucket=${STATE_BUCKET}" -input=false 2>&1)
           INIT_EXIT_CODE=$?
           set -e
           
@@ -81,19 +86,18 @@ jobs:
               
               # Check if the state file exists in S3
               echo "🔍 Checking if state file exists in S3..."
-              STATE_BUCKET="{{projectName}}-terraform-state"
               STATE_KEY="terraform.tfstate"
-              
+
               if aws s3api head-object --bucket "$STATE_BUCKET" --key "$STATE_KEY" 2>/dev/null; then
                 echo "📄 State file exists but is corrupted, attempting repair..."
-                
+
                 # Try to download and inspect the state file
                 aws s3 cp "s3://$STATE_BUCKET/$STATE_KEY" ./corrupted_state.tfstate 2>/dev/null || true
                 
                 # Try init with reconfigure to bypass corrupted state
                 echo "🔄 Trying init with -reconfigure..."
                 set +e
-                terraform init -reconfigure -input=false
+                terraform init -reconfigure -backend-config="bucket=${STATE_BUCKET}" -input=false
                 RECONFIGURE_EXIT_CODE=$?
                 set -e
                 
@@ -103,7 +107,7 @@ jobs:
                   
                   # Try init again with fresh state
                   echo "🔄 Trying init with fresh state..."
-                  terraform init -backend-config=backend-${ENVIRONMENT}.hcl -input=false
+                  terraform init -backend-config=backend-${ENVIRONMENT}.hcl -backend-config="bucket=${STATE_BUCKET}" -input=false
                 fi
               else
                 echo "📄 No state file found - this appears to be a fresh deployment"
@@ -111,7 +115,7 @@ jobs:
                 
                 # No state file exists, so this should work
                 set +e
-                terraform init -backend-config=backend-${ENVIRONMENT}.hcl -input=false
+                terraform init -backend-config=backend-${ENVIRONMENT}.hcl -backend-config="bucket=${STATE_BUCKET}" -input=false
                 FRESH_INIT_EXIT_CODE=$?
                 set -e
                 
@@ -138,7 +142,8 @@ jobs:
         run: |
           echo "🔑 Checking SSH keys for environment: ${ENVIRONMENT}..."
 
-          STATE_BUCKET="{{projectName}}-terraform-state"
+          AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          STATE_BUCKET="{{projectName}}-tfstate-${AWS_ACCOUNT_ID}"
           PRIVATE_KEY="ssh/${ENVIRONMENT}_key"
           PUBLIC_KEY="ssh/${ENVIRONMENT}_key.pub"
 
@@ -274,7 +279,8 @@ jobs:
         run: |
           echo "🔑 Checking SSH keys for environment: ${ENVIRONMENT}..."
 
-          STATE_BUCKET="{{projectName}}-terraform-state"
+          AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          STATE_BUCKET="{{projectName}}-tfstate-${AWS_ACCOUNT_ID}"
           PRIVATE_KEY="ssh/${ENVIRONMENT}_key"
           PUBLIC_KEY="ssh/${ENVIRONMENT}_key.pub"
 
@@ -361,27 +367,31 @@ jobs:
         run: |
           cd {{opsModule.moduleId}}/terraform
           echo "🔧 Initializing Terraform..."
-          
+
+          # Get AWS account ID for state bucket name
+          AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          STATE_BUCKET="{{projectName}}-tfstate-${AWS_ACCOUNT_ID}"
+          echo "Using state bucket: $STATE_BUCKET"
+
           # Disable exit on error for this specific command
           set +e
-          INIT_OUTPUT=$(terraform init -backend-config=backend-${ENVIRONMENT}.hcl -input=false 2>&1)
+          INIT_OUTPUT=$(terraform init -backend-config=backend-${ENVIRONMENT}.hcl -backend-config="bucket=${STATE_BUCKET}" -input=false 2>&1)
           INIT_EXIT_CODE=$?
           set -e
-          
+
           echo "$INIT_OUTPUT"
-          
+
           if [ $INIT_EXIT_CODE -eq 0 ]; then
             echo "✅ Terraform init successful"
           else
             echo "🚨 Terraform init failed, checking for state corruption..."
-            
+
             # Check if it's a state corruption issue
             if echo "$INIT_OUTPUT" | grep -q "state data in S3 does not have the expected content"; then
               echo "🛠️ State corruption detected during init, attempting recovery..."
-              
+
               # Check if the state file exists in S3
               echo "🔍 Checking if state file exists in S3..."
-              STATE_BUCKET="{{projectName}}-terraform-state"
               STATE_KEY="terraform.tfstate"
               
               if aws s3api head-object --bucket "$STATE_BUCKET" --key "$STATE_KEY" 2>/dev/null; then
@@ -390,7 +400,7 @@ jobs:
                 # Try init with reconfigure to bypass corrupted state
                 echo "🔄 Trying init with -reconfigure..."
                 set +e
-                terraform init -reconfigure -input=false
+                terraform init -reconfigure -backend-config="bucket=${STATE_BUCKET}" -input=false
                 RECONFIGURE_EXIT_CODE=$?
                 set -e
                 
@@ -400,7 +410,7 @@ jobs:
                   
                   # Try init again with fresh state
                   echo "🔄 Trying init with fresh state..."
-                  terraform init -backend-config=backend-${ENVIRONMENT}.hcl -input=false
+                  terraform init -backend-config=backend-${ENVIRONMENT}.hcl -backend-config="bucket=${STATE_BUCKET}" -input=false
                 fi
               else
                 echo "📄 No state file found - this appears to be a fresh deployment"
@@ -408,7 +418,7 @@ jobs:
                 
                 # No state file exists, so this should work
                 set +e
-                terraform init -backend-config=backend-${ENVIRONMENT}.hcl -input=false
+                terraform init -backend-config=backend-${ENVIRONMENT}.hcl -backend-config="bucket=${STATE_BUCKET}" -input=false
                 FRESH_INIT_EXIT_CODE=$?
                 set -e
                 

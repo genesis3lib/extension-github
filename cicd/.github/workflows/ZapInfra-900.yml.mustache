@@ -473,10 +473,15 @@ jobs:
         run: |
           cd {{opsModule.moduleId}}/terraform
           echo "🔧 Phase 2: Initializing Terraform for controlled destroy..."
-          
+
+          # Get AWS account ID for state bucket name
+          AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          STATE_BUCKET="{{projectName}}-tfstate-${AWS_ACCOUNT_ID}"
+          echo "Using state bucket: $STATE_BUCKET"
+
           # Disable exit on error for this specific command
           set +e
-          INIT_OUTPUT=$(terraform init -backend-config=backend-${ENVIRONMENT}.hcl -input=false 2>&1)
+          INIT_OUTPUT=$(terraform init -backend-config=backend-${ENVIRONMENT}.hcl -backend-config="bucket=${STATE_BUCKET}" -input=false 2>&1)
           INIT_EXIT_CODE=$?
           set -e
           
@@ -493,7 +498,6 @@ jobs:
               
               # Check if the state file exists in S3
               echo "🔍 Checking if state file exists in S3..."
-              STATE_BUCKET="{{projectName}}-terraform-state"
               STATE_KEY="terraform.tfstate"
               
               if aws s3api head-object --bucket "$STATE_BUCKET" --key "$STATE_KEY" 2>/dev/null; then
@@ -502,7 +506,7 @@ jobs:
                 # Try init with reconfigure to bypass corrupted state
                 echo "🔄 Trying init with -reconfigure..."
                 set +e
-                terraform init -reconfigure -input=false
+                terraform init -reconfigure -backend-config="bucket=${STATE_BUCKET}" -input=false
                 RECONFIGURE_EXIT_CODE=$?
                 set -e
                 
@@ -513,7 +517,7 @@ jobs:
                   # Try init again with fresh state
                   echo "🔄 Trying init with fresh state for destroy..."
                   set +e
-                  terraform init -backend-config=backend-${ENVIRONMENT}.hcl -input=false
+                  terraform init -backend-config=backend-${ENVIRONMENT}.hcl -backend-config="bucket=${STATE_BUCKET}" -input=false
                   FRESH_INIT_EXIT_CODE=$?
                   set -e
                   
@@ -808,7 +812,8 @@ jobs:
           }
           echo "✅ Admin credentials verified successfully"
           
-          STATE_BUCKET="{{projectName}}-terraform-state"
+          AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          STATE_BUCKET="{{projectName}}-tfstate-${AWS_ACCOUNT_ID}"
           LOCK_TABLE="{{projectName}}-terraform-locks"
           
           # Delete DynamoDB table
