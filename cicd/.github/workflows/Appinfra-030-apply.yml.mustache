@@ -552,8 +552,8 @@ jobs:
             exit 0
           fi
 
-          echo "📁 Copying {{opsModule.moduleId}}/ec2-setup/ directory to s3://${OPS_BUCKET}/ec2-setup/"
-          aws s3 cp {{opsModule.moduleId}}/ec2-setup/ "s3://${OPS_BUCKET}/ec2-setup/" --recursive --region {{{githubVarsOpen}}} env.AWS_REGION  {{{githubVarsClose}}}
+          echo "📁 Copying {{backendModule.moduleId}}/ec2-setup/ directory to s3://${OPS_BUCKET}/ec2-setup/"
+          aws s3 cp {{backendModule.moduleId}}/ec2-setup/ "s3://${OPS_BUCKET}/ec2-setup/" --recursive --region {{{githubVarsOpen}}} env.AWS_REGION  {{{githubVarsClose}}}
 
           echo "✅ EC2 setup scripts copied to S3 successfully"
           echo "🔍 Verifying uploaded files:"
