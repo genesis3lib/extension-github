@@ -52,7 +52,11 @@ jobs:
         run: |
           cd {{opsModule.moduleId}}/terraform
           echo "🧹 Phase 1: Comprehensive pre-destroy cleanup - preparing all resources..."
-          
+
+          # Get AWS account ID for bucket names (all buckets include account ID for global uniqueness)
+          AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          echo "Using AWS Account ID: $AWS_ACCOUNT_ID"
+
           # Enhanced cleanup function with dependency handling
           cleanup_resource() {
             local resource_type="$1"
@@ -242,9 +246,9 @@ jobs:
           # Phase 1c: Prepare database
           cleanup_resource "rds-instance" "{{projectName}}-{{{githubVarsOpen}}} env.ENVIRONMENT  {{{githubVarsClose}}}-db" "RDS PostgreSQL instance"
           
-          # Phase 1d: Empty storage
-          cleanup_resource "s3-bucket" "{{projectName}}-{{{githubVarsOpen}}} env.ENVIRONMENT  {{{githubVarsClose}}}-client-bucket" "Client S3 bucket"
-          cleanup_resource "s3-bucket" "{{projectName}}-{{{githubVarsOpen}}} env.ENVIRONMENT  {{{githubVarsClose}}}-ops" "Ops S3 bucket"
+          # Phase 1d: Empty storage (bucket names include AWS account ID for global uniqueness)
+          cleanup_resource "s3-bucket" "{{projectName}}-{{{githubVarsOpen}}} env.ENVIRONMENT  {{{githubVarsClose}}}-client-${AWS_ACCOUNT_ID}" "Client S3 bucket"
+          cleanup_resource "s3-bucket" "{{projectName}}-{{{githubVarsOpen}}} env.ENVIRONMENT  {{{githubVarsClose}}}-ops-${AWS_ACCOUNT_ID}" "Ops S3 bucket"
           
           # Phase 1e: Clean IAM (no dependencies)
           cleanup_resource "iam-role" "{{projectName}}-{{{githubVarsOpen}}} env.ENVIRONMENT  {{{githubVarsClose}}}-ec2-role" "EC2 IAM role"
@@ -654,7 +658,11 @@ jobs:
             exit 1
           }
           echo "✅ Admin credentials verified successfully"
-          
+
+          # Get AWS account ID for bucket names (all buckets include account ID for global uniqueness)
+          AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          echo "Using AWS Account ID: $AWS_ACCOUNT_ID"
+
           # Enhanced force cleanup function - comprehensive resource deletion
           force_cleanup_resource() {
             local resource_type="$1"
@@ -765,8 +773,10 @@ jobs:
           force_cleanup_resource "cloudfront" "" "CloudFront distributions"
           force_cleanup_resource "asg" "{{projectName}}-{{{githubVarsOpen}}} env.ENVIRONMENT  {{{githubVarsClose}}}-asg" "Auto Scaling Group"
           force_cleanup_resource "rds-instance" "{{projectName}}-{{{githubVarsOpen}}} env.ENVIRONMENT  {{{githubVarsClose}}}-db" "RDS instance"
-          force_cleanup_resource "s3-bucket" "{{projectName}}-{{{githubVarsOpen}}} env.ENVIRONMENT  {{{githubVarsClose}}}-client-bucket" "Client S3 bucket"
-          force_cleanup_resource "s3-bucket" "{{projectName}}-{{{githubVarsOpen}}} env.ENVIRONMENT  {{{githubVarsClose}}}-ops" "Ops S3 bucket"
+          force_cleanup_resource "s3-bucket" "{{projectName}}-{{{githubVarsOpen}}} env.ENVIRONMENT  {{{githubVarsClose}}}-client-${AWS_ACCOUNT_ID}" "Client S3 bucket"
+          force_cleanup_resource "s3-bucket" "{{projectName}}-{{{githubVarsOpen}}} env.ENVIRONMENT  {{{githubVarsClose}}}-ops-${AWS_ACCOUNT_ID}" "Ops S3 bucket"
+          force_cleanup_resource "s3-bucket" "{{projectName}}-{{{githubVarsOpen}}} env.ENVIRONMENT  {{{githubVarsClose}}}-api-${AWS_ACCOUNT_ID}" "API S3 bucket"
+          force_cleanup_resource "s3-bucket" "{{projectName}}-{{{githubVarsOpen}}} env.ENVIRONMENT  {{{githubVarsClose}}}-alb-logs-${AWS_ACCOUNT_ID}" "ALB Logs S3 bucket"
           
           # Comprehensive sweep for any remaining resources
           force_cleanup_resource "all-resources" "" "All remaining project resources"
