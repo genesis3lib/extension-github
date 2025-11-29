@@ -328,7 +328,7 @@ jobs:
           if [ "${ENVIRONMENT}" = "prod" ] || [ "${ENVIRONMENT}" = "production" ]; then
             UI_DOMAIN="{{projectName}}-ui.{{sld}}.{{tld}}"
           else
-            UI_DOMAIN="{{projectName}}-${ENVIRONMENT}-ui.{{sld}}.{{tld}}"
+            UI_DOMAIN="{{projectName}}-ui-${ENVIRONMENT}.{{sld}}.{{tld}}"
           fi
           
           # Check if certificate exists and is validated
