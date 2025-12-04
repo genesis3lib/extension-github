@@ -393,6 +393,8 @@ jobs:
         id: auto-dns
         run: |
           {{!-- PLACEHOLDER: dns-auto-manage --}}
+          echo "⚠️ No automatic DNS management configured (no Route53/Cloudflare extension)"
+          echo "DNS_AUTO_MANAGED=false" >> $GITHUB_OUTPUT
       - name: Output Bootstrap Results
         run: |
           cd {{opsModule.moduleId}}/terraform/bootstrap
