@@ -159,19 +159,25 @@ jobs:
                   
                   # Remove all object versions (handles BucketNotEmpty error)
                   echo "    Removing all object versions..."
-                  aws s3api list-object-versions --bucket "$identifier" --query 'Versions[].[Key,VersionId]' --output text 2>/dev/null | while read key version; do
-                    if [ -n "$key" ] && [ -n "$version" ]; then
-                      aws s3api delete-object --bucket "$identifier" --key "$key" --version-id "$version" 2>/dev/null || true
-                    fi
-                  done
-                  
+                  VERSIONS_OUTPUT=$(aws s3api list-object-versions --bucket "$identifier" --query 'Versions[].[Key,VersionId]' --output text 2>/dev/null || true)
+                  if [ -n "$VERSIONS_OUTPUT" ] && [ "$VERSIONS_OUTPUT" != "None" ]; then
+                    echo "$VERSIONS_OUTPUT" | while read key version; do
+                      if [ -n "$key" ] && [ "$key" != "None" ] && [ -n "$version" ] && [ "$version" != "None" ]; then
+                        aws s3api delete-object --bucket "$identifier" --key "$key" --version-id "$version" 2>/dev/null || true
+                      fi
+                    done
+                  fi
+
                   # Remove all delete markers (handles BucketNotEmpty error)
                   echo "    Removing all delete markers..."
-                  aws s3api list-object-versions --bucket "$identifier" --query 'DeleteMarkers[].[Key,VersionId]' --output text 2>/dev/null | while read key version; do
-                    if [ -n "$key" ] && [ -n "$version" ]; then
-                      aws s3api delete-object --bucket "$identifier" --key "$key" --version-id "$version" 2>/dev/null || true
-                    fi
-                  done
+                  MARKERS_OUTPUT=$(aws s3api list-object-versions --bucket "$identifier" --query 'DeleteMarkers[].[Key,VersionId]' --output text 2>/dev/null || true)
+                  if [ -n "$MARKERS_OUTPUT" ] && [ "$MARKERS_OUTPUT" != "None" ]; then
+                    echo "$MARKERS_OUTPUT" | while read key version; do
+                      if [ -n "$key" ] && [ "$key" != "None" ] && [ -n "$version" ] && [ "$version" != "None" ]; then
+                        aws s3api delete-object --bucket "$identifier" --key "$key" --version-id "$version" 2>/dev/null || true
+                      fi
+                    done
+                  fi
                   
                   # Remove bucket lifecycle policies
                   aws s3api delete-bucket-lifecycle --bucket "$identifier" 2>/dev/null || true
@@ -362,18 +368,24 @@ jobs:
               aws s3 rm "s3://$BUCKET" --recursive 2>/dev/null || true
               
               # Delete all object versions
-              aws s3api list-object-versions --bucket "$BUCKET" --query 'Versions[].[Key,VersionId]' --output text 2>/dev/null | while read key version; do
-                if [ -n "$key" ] && [ -n "$version" ]; then
-                  aws s3api delete-object --bucket "$BUCKET" --key "$key" --version-id "$version" 2>/dev/null || true
-                fi
-              done
-              
+              VERSIONS_OUTPUT=$(aws s3api list-object-versions --bucket "$BUCKET" --query 'Versions[].[Key,VersionId]' --output text 2>/dev/null || true)
+              if [ -n "$VERSIONS_OUTPUT" ] && [ "$VERSIONS_OUTPUT" != "None" ]; then
+                echo "$VERSIONS_OUTPUT" | while read key version; do
+                  if [ -n "$key" ] && [ "$key" != "None" ] && [ -n "$version" ] && [ "$version" != "None" ]; then
+                    aws s3api delete-object --bucket "$BUCKET" --key "$key" --version-id "$version" 2>/dev/null || true
+                  fi
+                done
+              fi
+
               # Delete all delete markers
-              aws s3api list-object-versions --bucket "$BUCKET" --query 'DeleteMarkers[].[Key,VersionId]' --output text 2>/dev/null | while read key version; do
-                if [ -n "$key" ] && [ -n "$version" ]; then
-                  aws s3api delete-object --bucket "$BUCKET" --key "$key" --version-id "$version" 2>/dev/null || true
-                fi
-              done
+              MARKERS_OUTPUT=$(aws s3api list-object-versions --bucket "$BUCKET" --query 'DeleteMarkers[].[Key,VersionId]' --output text 2>/dev/null || true)
+              if [ -n "$MARKERS_OUTPUT" ] && [ "$MARKERS_OUTPUT" != "None" ]; then
+                echo "$MARKERS_OUTPUT" | while read key version; do
+                  if [ -n "$key" ] && [ "$key" != "None" ] && [ -n "$version" ] && [ "$version" != "None" ]; then
+                    aws s3api delete-object --bucket "$BUCKET" --key "$key" --version-id "$version" 2>/dev/null || true
+                  fi
+                done
+              fi
               
               echo "    ✅ S3 bucket $BUCKET completely emptied"
             fi
