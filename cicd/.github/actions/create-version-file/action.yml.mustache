@@ -1,0 +1,40 @@
+name: 'Create Version File'
+description: 'Create version.ts file with build information for frontend projects'
+
+inputs:
+  output-path:
+    description: 'Path to write version.ts file (e.g., src/utils/version.ts)'
+    required: true
+  module-id:
+    description: 'Module directory containing the frontend code'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Create version.ts
+      shell: bash
+      run: |
+        OUTPUT_DIR="{{{githubVarsOpen}}} inputs.module-id {{{githubVarsClose}}}/{{{githubVarsOpen}}} inputs.output-path {{{githubVarsClose}}}"
+        OUTPUT_DIR=$(dirname "$OUTPUT_DIR")
+        OUTPUT_FILE="{{{githubVarsOpen}}} inputs.module-id {{{githubVarsClose}}}/{{{githubVarsOpen}}} inputs.output-path {{{githubVarsClose}}}"
+
+        # Ensure directory exists
+        mkdir -p "$OUTPUT_DIR"
+
+        # Get short SHA
+        SHORT_SHA=$(git rev-parse --short HEAD)
+
+        # Create version.ts file using echo (avoids heredoc YAML parsing issues)
+        {
+          echo "export const version = {"
+          echo "  build: '{{{githubVarsOpen}}} github.run_number {{{githubVarsClose}}}',"
+          echo "  attempt: '{{{githubVarsOpen}}} github.run_attempt {{{githubVarsClose}}}',"
+          echo "  action: '{{{githubVarsOpen}}} github.action {{{githubVarsClose}}}',"
+          echo "  modifiedDate: '{{{githubVarsOpen}}} github.event.repository.updated_at {{{githubVarsClose}}}',"
+          echo "  sha: '$SHORT_SHA'"
+          echo "};"
+        } > "$OUTPUT_FILE"
+
+        echo "✅ Created version file at $OUTPUT_FILE"
+        cat "$OUTPUT_FILE"

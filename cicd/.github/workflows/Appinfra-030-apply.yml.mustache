@@ -23,32 +23,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Env setup
-        run: |
-          
-          # Set environment variables
-          echo "BRANCH={{{githubVarsOpen}}} github.ref_name  {{{githubVarsClose}}}" >> $GITHUB_ENV
-          if [[ "{{{githubVarsOpen}}} github.ref_name  {{{githubVarsClose}}}" = "main" || "{{{githubVarsOpen}}} github.ref_name  {{{githubVarsClose}}}" = "production" || "{{{githubVarsOpen}}} github.ref_name  {{{githubVarsClose}}}" = "prod" ]]; then
-            echo "ENVIRONMENT=prod" >> $GITHUB_ENV
-          else
-            BRANCH_ENV=$(echo "{{{githubVarsOpen}}} github.ref_name  {{{githubVarsClose}}}" | sed "s/\\//-/g")
-            echo "ENVIRONMENT=$BRANCH_ENV" >> $GITHUB_ENV
-          fi
-          
-          echo "✅ Environment setup completed: {{{githubVarsOpen}}} github.ref_name  {{{githubVarsClose}}}"
-
       - name: Setup Environment
         id: setup
-        run: |
-          # Environment is already set in workflow env from branch
-          echo "environment={{{githubVarsOpen}}} env.ENVIRONMENT  {{{githubVarsClose}}}" >> $GITHUB_OUTPUT
-          echo "Environment: {{{githubVarsOpen}}} env.ENVIRONMENT  {{{githubVarsClose}}}"
+        uses: ./.github/actions/setup-environment
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: ./.github/actions/aws-credentials
         with:
-          role-to-assume: arn:aws:iam::{{{githubVarsOpen}}} vars.AWS_ACCOUNT_ID {{{githubVarsClose}}}:role/{{projectName}}-terraform-role
-          aws-region: {{{githubVarsOpen}}} env.AWS_REGION  {{{githubVarsClose}}}
+          account-id: {{{githubVarsOpen}}} vars.AWS_ACCOUNT_ID {{{githubVarsClose}}}
+          role-name: {{projectName}}-terraform-role
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -242,25 +225,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Env setup
-        run: |
-          
-          # Set environment variables
-          echo "BRANCH={{{githubVarsOpen}}} github.ref_name  {{{githubVarsClose}}}" >> $GITHUB_ENV
-          if [[ "{{{githubVarsOpen}}} github.ref_name  {{{githubVarsClose}}}" = "main" || "{{{githubVarsOpen}}} github.ref_name  {{{githubVarsClose}}}" = "production" || "{{{githubVarsOpen}}} github.ref_name  {{{githubVarsClose}}}" = "prod" ]]; then
-            echo "ENVIRONMENT=prod" >> $GITHUB_ENV
-          else
-            BRANCH_ENV=$(echo "{{{githubVarsOpen}}} github.ref_name  {{{githubVarsClose}}}" | sed "s/\\//-/g")
-            echo "ENVIRONMENT=$BRANCH_ENV" >> $GITHUB_ENV
-          fi
-          
-          echo "✅ Environment setup completed: {{{githubVarsOpen}}} github.ref_name  {{{githubVarsClose}}}"
+      - name: Setup Environment
+        uses: ./.github/actions/setup-environment
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: ./.github/actions/aws-credentials
         with:
-          role-to-assume: arn:aws:iam::{{{githubVarsOpen}}} vars.AWS_ACCOUNT_ID {{{githubVarsClose}}}:role/{{projectName}}-terraform-role
-          aws-region: {{{githubVarsOpen}}} env.AWS_REGION  {{{githubVarsClose}}}
+          account-id: {{{githubVarsOpen}}} vars.AWS_ACCOUNT_ID {{{githubVarsClose}}}
+          role-name: {{projectName}}-terraform-role
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3

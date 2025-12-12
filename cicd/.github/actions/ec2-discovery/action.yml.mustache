@@ -1,0 +1,79 @@
+name: 'EC2 Discovery'
+description: 'Discover running EC2 instances by project and environment tags'
+
+inputs:
+  project-name:
+    description: 'Project name tag value'
+    required: true
+  environment:
+    description: 'Environment tag value'
+    required: true
+  fail-if-empty:
+    description: 'Fail if no instances found (default: true)'
+    required: false
+    default: 'true'
+
+outputs:
+  instance-ids:
+    description: 'Comma-separated list of instance IDs'
+    value: {{{githubVarsOpen}}} steps.discover.outputs.instance_ids {{{githubVarsClose}}}
+  instance-count:
+    description: 'Number of instances found'
+    value: {{{githubVarsOpen}}} steps.discover.outputs.instance_count {{{githubVarsClose}}}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Discover EC2 Instances
+      id: discover
+      shell: bash
+      run: |
+        PROJECT_NAME="{{{githubVarsOpen}}} inputs.project-name {{{githubVarsClose}}}"
+        ENVIRONMENT="{{{githubVarsOpen}}} inputs.environment {{{githubVarsClose}}}"
+        FAIL_IF_EMPTY="{{{githubVarsOpen}}} inputs.fail-if-empty {{{githubVarsClose}}}"
+
+        echo "🔍 Finding EC2 instances by tags..."
+        echo "Looking for instances with Project=$PROJECT_NAME and Environment=$ENVIRONMENT"
+
+        # Query EC2 instances by tags
+        EC2_INSTANCES=$(aws ec2 describe-instances \
+          --filters \
+            "Name=tag:Project,Values=$PROJECT_NAME" \
+            "Name=tag:Environment,Values=$ENVIRONMENT" \
+            "Name=instance-state-name,Values=running" \
+          --query 'Reservations[*].Instances[*].InstanceId' \
+          --output text | tr '\n\t ' ',' | sed 's/,,*/,/g' | sed 's/^,//g' | sed 's/,$//g')
+
+        if [ -n "${EC2_INSTANCES}" ] && [ "${EC2_INSTANCES}" != "" ]; then
+          # Count instances
+          INSTANCE_COUNT=$(echo "$EC2_INSTANCES" | tr ',' '\n' | wc -l | tr -d ' ')
+
+          echo "instance_ids=${EC2_INSTANCES}" >> $GITHUB_OUTPUT
+          echo "instance_count=${INSTANCE_COUNT}" >> $GITHUB_OUTPUT
+
+          # Also set as env var for backward compatibility
+          echo "EC2_INSTANCES=${EC2_INSTANCES}" >> $GITHUB_ENV
+
+          echo "✅ Found $INSTANCE_COUNT running instance(s): ${EC2_INSTANCES}"
+        else
+          echo "instance_ids=" >> $GITHUB_OUTPUT
+          echo "instance_count=0" >> $GITHUB_OUTPUT
+
+          echo "❌ No running instances found with tags Project=$PROJECT_NAME and Environment=$ENVIRONMENT"
+
+          if [ "$FAIL_IF_EMPTY" = "true" ]; then
+            echo "This could indicate:"
+            echo "  1. Instances are still launching"
+            echo "  2. Instances failed to start properly"
+            echo "  3. Infrastructure deployment is incomplete"
+            echo ""
+            echo "All instances in environment:"
+            aws ec2 describe-instances \
+              --filters \
+                "Name=tag:Project,Values=$PROJECT_NAME" \
+                "Name=tag:Environment,Values=$ENVIRONMENT" \
+              --query 'Reservations[*].Instances[*].{InstanceId:InstanceId,State:State.Name,Name:Tags[?Key==`Name`].Value|[0]}' \
+              --output table
+            exit 1
+          fi
+        fi

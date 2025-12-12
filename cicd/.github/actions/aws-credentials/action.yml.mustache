@@ -1,0 +1,24 @@
+name: 'AWS Credentials'
+description: 'Configure AWS credentials using OIDC role assumption'
+
+inputs:
+  role-name:
+    description: 'IAM role name to assume (default: {{projectName}}-github-actions)'
+    required: false
+    default: '{{projectName}}-github-actions'
+  aws-region:
+    description: 'AWS region (default: {{region}})'
+    required: false
+    default: '{{region}}'
+  account-id:
+    description: 'AWS account ID'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Configure AWS credentials (OIDC)
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: arn:aws:iam::{{{githubVarsOpen}}} inputs.account-id {{{githubVarsClose}}}:role/{{{githubVarsOpen}}} inputs.role-name {{{githubVarsClose}}}
+        aws-region: {{{githubVarsOpen}}} inputs.aws-region {{{githubVarsClose}}}

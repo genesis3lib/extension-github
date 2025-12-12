@@ -1,0 +1,33 @@
+name: 'Setup Environment'
+description: 'Set up environment variables for Genesis3 workflows (BRANCH and ENVIRONMENT)'
+
+outputs:
+  branch:
+    description: 'The current branch name'
+    value: {{{githubVarsOpen}}} steps.env-setup.outputs.branch {{{githubVarsClose}}}
+  environment:
+    description: 'The target environment (prod or branch-based)'
+    value: {{{githubVarsOpen}}} steps.env-setup.outputs.environment {{{githubVarsClose}}}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Env setup
+      id: env-setup
+      shell: bash
+      run: |
+        # Set environment variables
+        BRANCH="{{{githubVarsOpen}}} github.ref_name {{{githubVarsClose}}}"
+        echo "BRANCH=$BRANCH" >> $GITHUB_ENV
+        echo "branch=$BRANCH" >> $GITHUB_OUTPUT
+
+        if [[ "$BRANCH" = "main" || "$BRANCH" = "production" || "$BRANCH" = "prod" ]]; then
+          echo "ENVIRONMENT=prod" >> $GITHUB_ENV
+          echo "environment=prod" >> $GITHUB_OUTPUT
+        else
+          BRANCH_ENV=$(echo "$BRANCH" | sed "s/\\//-/g")
+          echo "ENVIRONMENT=$BRANCH_ENV" >> $GITHUB_ENV
+          echo "environment=$BRANCH_ENV" >> $GITHUB_OUTPUT
+        fi
+
+        echo "✅ Environment setup completed: $BRANCH"

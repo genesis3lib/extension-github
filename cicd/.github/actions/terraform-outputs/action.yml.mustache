@@ -1,0 +1,75 @@
+name: 'Terraform Outputs'
+description: 'Initialize Terraform and retrieve outputs from state'
+
+inputs:
+  terraform-dir:
+    description: 'Directory containing Terraform configuration'
+    required: true
+  environment:
+    description: 'Environment name for backend config (e.g., prod, dev)'
+    required: true
+  project-name:
+    description: 'Project name for state bucket naming'
+    required: true
+  tf-version:
+    description: 'Terraform version to use'
+    required: false
+    default: '1.12.2'
+
+outputs:
+  s3-bucket:
+    description: 'S3 bucket name from Terraform outputs'
+    value: {{{githubVarsOpen}}} steps.tf-outputs.outputs.s3_bucket {{{githubVarsClose}}}
+  cloudfront-distribution:
+    description: 'CloudFront distribution ID from Terraform outputs'
+    value: {{{githubVarsOpen}}} steps.tf-outputs.outputs.cloudfront_distribution {{{githubVarsClose}}}
+  ops-bucket:
+    description: 'Ops bucket name from Terraform outputs'
+    value: {{{githubVarsOpen}}} steps.tf-outputs.outputs.ops_bucket {{{githubVarsClose}}}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: {{{githubVarsOpen}}} inputs.tf-version {{{githubVarsClose}}}
+        terraform_wrapper: false
+
+    - name: Get Terraform Outputs
+      id: tf-outputs
+      shell: bash
+      run: |
+        cd {{{githubVarsOpen}}} inputs.terraform-dir {{{githubVarsClose}}}
+        ENVIRONMENT="{{{githubVarsOpen}}} inputs.environment {{{githubVarsClose}}}"
+        PROJECT_NAME="{{{githubVarsOpen}}} inputs.project-name {{{githubVarsClose}}}"
+
+        echo "🔍 Getting Terraform outputs for $ENVIRONMENT environment..."
+
+        # Get AWS account ID for state bucket name
+        AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+        STATE_BUCKET="${PROJECT_NAME}-tfstate-${AWS_ACCOUNT_ID}"
+        echo "Using state bucket: ${STATE_BUCKET}"
+
+        # Initialize Terraform to access state
+        terraform init -backend-config=backend-${ENVIRONMENT}.hcl -backend-config="bucket=${STATE_BUCKET}" -input=false
+
+        # Get outputs (allow empty values)
+        S3_BUCKET=$(terraform output -raw s3_bucket_name 2>/dev/null || echo "")
+        CF_DISTRIBUTION=$(terraform output -raw cloudfront_distribution_id 2>/dev/null || echo "")
+        OPS_BUCKET=$(terraform output -raw ops_bucket_name 2>/dev/null || echo "")
+
+        # Set outputs
+        echo "s3_bucket=$S3_BUCKET" >> $GITHUB_OUTPUT
+        echo "cloudfront_distribution=$CF_DISTRIBUTION" >> $GITHUB_OUTPUT
+        echo "ops_bucket=$OPS_BUCKET" >> $GITHUB_OUTPUT
+
+        # Also set as environment variables for backward compatibility
+        echo "AWS_S3_TARGET=$S3_BUCKET" >> $GITHUB_ENV
+        echo "CLOUDFRONT_TARGET=$CF_DISTRIBUTION" >> $GITHUB_ENV
+        echo "OPS_BUCKET=$OPS_BUCKET" >> $GITHUB_ENV
+
+        echo "✅ Terraform outputs retrieved"
+        [ -n "$S3_BUCKET" ] && echo "  S3 bucket: $S3_BUCKET"
+        [ -n "$CF_DISTRIBUTION" ] && echo "  CloudFront: $CF_DISTRIBUTION"
+        [ -n "$OPS_BUCKET" ] && echo "  Ops bucket: $OPS_BUCKET"

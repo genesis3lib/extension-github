@@ -20,19 +20,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Env setup
-        run: |
-          
-          # Set environment variables
-          echo "BRANCH={{{githubVarsOpen}}} github.ref_name {{{githubVarsClose}}}" >> $GITHUB_ENV
-          if [[ "{{{githubVarsOpen}}} github.ref_name {{{githubVarsClose}}}" = "main" || "{{{githubVarsOpen}}} github.ref_name {{{githubVarsClose}}}" = "production" ]]; then
-            echo "ENVIRONMENT=prod" >> $GITHUB_ENV
-          else
-            BRANCH_ENV=$(echo "{{{githubVarsOpen}}} github.ref_name  {{{githubVarsClose}}}" | sed "s/\\//-/g")
-            echo "ENVIRONMENT=$BRANCH_ENV" >> $GITHUB_ENV
-          fi
-          
-          echo "✅ Environment setup completed: {{{githubVarsOpen}}} github.ref_name {{{githubVarsClose}}}"
+      - name: Setup Environment
+        uses: ./.github/actions/setup-environment
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
