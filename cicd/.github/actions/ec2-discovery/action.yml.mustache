@@ -55,6 +55,7 @@ runs:
           echo "EC2_INSTANCES=${EC2_INSTANCES}" >> $GITHUB_ENV
 
           echo "✅ Found $INSTANCE_COUNT running instance(s): ${EC2_INSTANCES}"
+          exit 0
         else
           echo "instance_ids=" >> $GITHUB_OUTPUT
           echo "instance_count=0" >> $GITHUB_OUTPUT
@@ -75,5 +76,8 @@ runs:
               --query 'Reservations[*].Instances[*].{InstanceId:InstanceId,State:State.Name,Name:Tags[?Key==`Name`].Value|[0]}' \
               --output table
             exit 1
+          else
+            # FAIL_IF_EMPTY is false, exit successfully even with no instances
+            exit 0
           fi
         fi

@@ -73,3 +73,6 @@ runs:
         [ -n "$S3_BUCKET" ] && echo "  S3 bucket: $S3_BUCKET"
         [ -n "$CF_DISTRIBUTION" ] && echo "  CloudFront: $CF_DISTRIBUTION"
         [ -n "$OPS_BUCKET" ] && echo "  Ops bucket: $OPS_BUCKET"
+
+        # Ensure successful exit (conditional echo may return non-zero if condition is false)
+        exit 0
