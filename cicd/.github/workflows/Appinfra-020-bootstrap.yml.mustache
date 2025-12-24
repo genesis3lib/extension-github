@@ -384,6 +384,14 @@ jobs:
           {{!-- PLACEHOLDER: dns-auto-manage --}}
           echo "⚠️ No automatic DNS management configured (no Route53/Cloudflare extension)"
           echo "DNS_AUTO_MANAGED=false" >> $GITHUB_OUTPUT
+
+      - name: Provision Redis Cache
+        id: redis-provision
+        run: |
+          {{!-- PLACEHOLDER: redis-cloud-provision --}}
+          echo "ℹ️ No Redis cache extension configured"
+          echo "REDIS_PROVISIONED=false" >> $GITHUB_OUTPUT
+
       - name: Output Bootstrap Results
         run: |
           cd {{opsModule.moduleId}}/terraform/bootstrap
