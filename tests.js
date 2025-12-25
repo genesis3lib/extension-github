@@ -1,9 +1,12 @@
 /**
  * Genesis3 Module Test Configuration - GitHub Extension
+ *
+ * Tests for GitHub CI/CD workflows including Terraform state management,
+ * security features, and deployment pipelines.
  */
 
 module.exports = {
-  moduleId: 'extension-github',
+  moduleId: 'vcs-github',
   moduleName: 'GitHub CI/CD & Actions',
 
   scenarios: [
@@ -69,6 +72,75 @@ module.exports = {
         '.github/workflows/deploy-dev.yml',
         '.github/workflows/deploy-staging.yml',
         '.github/workflows/deploy-prod.yml'
+      ]
+    }
+  ],
+
+  /**
+   * Template validations for CI/CD workflow files
+   * These validate that workflow templates contain correct recovery and security patterns
+   */
+  templateValidations: [
+    {
+      name: 'state-corruption-recovery',
+      description: 'P0: Terraform apply workflow must detect and recover from state corruption',
+      template: 'cicd/.github/workflows/Appinfra-030-apply.yml.mustache',
+      contains: [
+        'state data in S3 does not have the expected content',
+        'State corruption detected',
+        '-reconfigure',
+        'attempting recovery'
+      ]
+    },
+    {
+      name: 'dynamodb-lock-clearing',
+      description: 'P1: Bootstrap workflow must clear stale DynamoDB locks',
+      template: 'cicd/.github/workflows/Appinfra-020-bootstrap.yml.mustache',
+      contains: [
+        'Clear DynamoDB Locks',
+        'dynamodb scan',
+        'dynamodb delete-item',
+        'Cleared all locks'
+      ]
+    },
+    {
+      name: 'ssh-key-generation',
+      description: 'P1: Apply workflow must generate SSH keys if missing',
+      template: 'cicd/.github/workflows/Appinfra-030-apply.yml.mustache',
+      contains: [
+        'Check and Generate SSH Keys',
+        'ssh-keygen -t rsa -b 4096',
+        's3 cp'
+      ]
+    },
+    {
+      name: 'bootstrap-import-fallback',
+      description: 'P1: Bootstrap workflow must handle existing resources via terraform import',
+      template: 'cicd/.github/workflows/Appinfra-020-bootstrap.yml.mustache',
+      contains: [
+        'BucketAlreadyOwnedByYou',
+        'terraform import',
+        'attempting to import'
+      ]
+    },
+    {
+      name: 'oidc-authentication',
+      description: 'P1: Workflows must use OIDC for AWS authentication',
+      template: 'cicd/.github/actions/aws-credentials/action.yml.mustache',
+      contains: [
+        'id-token: write',
+        'aws-actions/configure-aws-credentials',
+        'role-to-assume'
+      ]
+    },
+    {
+      name: 'deployment-summary',
+      description: 'P2: Workflows must include deployment summary in GITHUB_STEP_SUMMARY',
+      template: 'cicd/.github/workflows/Appinfra-030-apply.yml.mustache',
+      contains: [
+        'GITHUB_STEP_SUMMARY',
+        'Deployment Summary',
+        'Deployment Successful'
       ]
     }
   ]

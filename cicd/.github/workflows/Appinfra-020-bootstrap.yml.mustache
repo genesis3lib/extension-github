@@ -3,6 +3,11 @@ name: Appinfra-020-Bootstrap
 on:
   workflow_dispatch:
 
+# Prevent concurrent bootstrap operations that could conflict
+concurrency:
+  group: bootstrap-{{{githubVarsOpen}}} github.ref_name {{{githubVarsClose}}}
+  cancel-in-progress: false
+
 permissions:
   contents: read
   id-token: write

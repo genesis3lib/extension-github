@@ -3,6 +3,11 @@ name: Appinfra-030-Apply
 on:
   workflow_dispatch:
 
+# Prevent concurrent infrastructure changes that could corrupt Terraform state
+concurrency:
+  group: terraform-{{{githubVarsOpen}}} github.ref_name {{{githubVarsClose}}}
+  cancel-in-progress: false
+
 permissions:
   contents: read
   id-token: write

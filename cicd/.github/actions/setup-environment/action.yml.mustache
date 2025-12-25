@@ -1,6 +1,12 @@
 name: 'Setup Environment'
 description: 'Set up environment variables for Genesis3 workflows (BRANCH and ENVIRONMENT)'
 
+inputs:
+  require-main-for-prod:
+    description: 'Require main branch for production deployments (default: true)'
+    required: false
+    default: 'true'
+
 outputs:
   branch:
     description: 'The current branch name'
@@ -18,6 +24,7 @@ runs:
       run: |
         # Set environment variables
         BRANCH="{{{githubVarsOpen}}} github.ref_name {{{githubVarsClose}}}"
+        REQUIRE_MAIN="{{{githubVarsOpen}}} inputs.require-main-for-prod {{{githubVarsClose}}}"
         echo "BRANCH=$BRANCH" >> $GITHUB_ENV
         echo "branch=$BRANCH" >> $GITHUB_OUTPUT
 
@@ -30,4 +37,15 @@ runs:
           echo "environment=$BRANCH_ENV" >> $GITHUB_OUTPUT
         fi
 
-        echo "✅ Environment setup completed: $BRANCH"
+        # Production safety gate: block prod deploys from non-main branches
+        ENV_VALUE="${ENVIRONMENT:-$BRANCH_ENV}"
+        if [[ "$ENV_VALUE" = "prod" && "$REQUIRE_MAIN" = "true" ]]; then
+          if [[ "$BRANCH" != "main" && "$BRANCH" != "production" && "$BRANCH" != "prod" ]]; then
+            echo "::error::Production deployments are only allowed from main, production, or prod branches!"
+            echo "Current branch: $BRANCH"
+            echo "To deploy to production, merge your changes to the main branch first."
+            exit 1
+          fi
+        fi
+
+        echo "✅ Environment setup completed: $BRANCH -> $ENV_VALUE"
